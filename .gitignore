@@ -1,0 +1,8 @@
+core
+*.o
+proj4.zip
+vm
+nittavm
+*.swp
+longtest.txt
+test.txt

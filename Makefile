@@ -13,9 +13,14 @@ BINDIR=.
 APPDIR=./apps
 
 OBJS=$(OBJDIR)/Machine.o \
+     $(OBJDIR)/UtilsVM.o \
+     $(OBJDIR)/MutexVM.o \
+     $(OBJDIR)/ThreadVM.o \
+     $(OBJDIR)/FileVM.o \
+     $(OBJDIR)/MemoryPoolVM.o \
      $(OBJDIR)/VirtualMachineUtils.o \
      $(OBJDIR)/VirtualMachine.o \
-     $(OBJDIR)/main.o
+     $(OBJDIR)/main.o 
      
      
 #DEBUG_MODE=TRUE
@@ -28,7 +33,8 @@ endif
 INCLUDES += -I. 
 LIBRARIES = -ldl
 
-CFLAGS += -std=c++11 -Wall -U_FORTIFY_SOURCE $(INCLUDES) $(DEFINES)
+CFLAGS += -Wall -U_FORTIFY_SOURCE $(INCLUDES) $(DEFINES)
+CPPFLAGS += -std=c++11 $(INCLUDES) $(DEFINES)
 APPCFLAGS += -Wall -fPIC $(INCLUDES) $(DEFINES)
 
 ifdef DEBUG_MODE
@@ -77,7 +83,6 @@ $(OBJDIR)/%.o : %.cpp
 	
 clean::
 	-rm $(OBJDIR)/*.o 
-	-rm $(APPDIR)/*.o    
 	-rm $(BINDIR)/*.so    
 	
 .PHONY: clean
