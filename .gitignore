@@ -6,3 +6,5 @@ nittavm
 *.swp
 longtest.txt
 test.txt
+*.so
+fat.ima

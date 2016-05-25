@@ -23,6 +23,7 @@ extern "C" {
   vector<MemoryPool *> memoryPools;
   volatile unsigned int ticksElapsed;
   volatile unsigned int glbl_tickms;
+  vector<FAT *> images;
   vector<TCB*> threads;
   vector<Mutex *> mutexes;
   queue<TCB*> highQueue;
@@ -235,7 +236,18 @@ extern "C" {
       VMThreadActivate(VMThreadID);
 
       // mount FAT image
-      //MachineFileOpen(mount, O_RDWR, 0600, fileCallback, curThread);
+      MachineFileOpen(mount, O_RDWR, 0600, fileCallback, curThread);
+      curThread->state = VM_THREAD_STATE_WAITING;
+      Scheduler(false);
+      int fatfd = curThread->fileCallData;
+
+      // create FAT image
+      FAT *image = new FAT();
+      image->fd = fatfd;
+      extractFatImage(image);
+      
+      // store image in global vector
+      images.push_back(image);
 
       main_entry(argc, argv);
 

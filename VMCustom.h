@@ -25,6 +25,45 @@ extern "C" {
 
   using namespace std;
 
+  class BPB
+  {
+    public:
+      string OEMName;
+      string VolID;
+      string VolLab;
+      string FileSystemType;
+
+      int BytsPerSec;
+      int SecPerClus;
+      int ReservedSecs;
+      int fatCount;
+      int RootEntry;
+      int TotSec16;
+      int Media;
+      int FatSize16;
+      int SecPerTrk;
+      int NumHeads;
+      int HiddSec;
+      int TotSec32;
+      int DrvNumber;
+      int reserved1;
+      int BootSig;
+      int RootDirSecs;
+      int FirstRootSec;
+      int FirstDataSec;
+      int ClusterCount;
+
+  };
+
+    
+  class FAT
+  {
+    public:
+      int fd;
+      BPB *bpb;
+  };
+
+
   class Block
   {
     public:
@@ -93,6 +132,9 @@ extern "C" {
   extern volatile unsigned int ticksElapsed;
 
   extern volatile unsigned int glbl_tickms;
+ 
+  // vector of all images
+  extern vector<FAT *> images;
 
   // vector of all threads
   extern vector<TCB*> threads;
@@ -112,6 +154,7 @@ extern "C" {
   void Scheduler(bool activate);
   void idle(void *param);
   void printThreadInfo();
+  void printBPB(BPB *bpb);
   void fileCallback(void *calldata, int result);
 
   void printBlocks(MemoryPool *mempool);
@@ -140,6 +183,8 @@ extern "C" {
   TVMStatus VMFileOpen(const char *filename, int flags, int mode, int *filedescriptor);
   TVMStatus VMFileWrite(int filedescriptor, void *data, int *length);
   TVMStatus VMFileRead(int filedescriptor, void *data, int *length);
+
+  void extractFatImage(FAT *fat);
 
 
 

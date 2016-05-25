@@ -20,6 +20,32 @@ extern "C" {
 
   using namespace std;
 
+  void printBPB(BPB *bpb)
+  {
+    cout << "OEM Name            : " << bpb->OEMName << endl;
+    cout << "Bytes per Sector    : " << bpb->BytsPerSec << endl;
+    cout << "Sectors Per Cluster : " << bpb->SecPerClus << endl;
+    cout << "Reserved Sectors    : " << bpb->ReservedSecs << endl;
+    cout << "Fat Count           : " << bpb->fatCount << endl;
+    cout << "Root Entry          : " << bpb->RootEntry << endl;
+    cout << "Sector Count 16     : " << bpb->TotSec16 << endl;
+    cout << "Media               : " << bpb->Media << endl;
+    cout << "FAT Size 16         : " << bpb->FatSize16 << endl;
+    cout << "Sectors Per Track   : " << bpb->SecPerTrk << endl;
+    cout << "Head Count          : " << bpb->NumHeads << endl;
+    cout << "Hidden Sector Count : " << bpb->HiddSec << endl;
+    cout << "Sector Count 32     : " << bpb->TotSec32 << endl;
+    cout << "Drive Number        : " << bpb->DrvNumber << endl;
+    cout << "Boot Signature      : " << bpb->BootSig << endl;
+    cout << "Volume ID           : " << bpb->VolID << endl;
+    cout << "Volume Label        : " << bpb->VolLab << endl;
+    cout << "File System Type    : " << bpb->FileSystemType << endl;
+    cout << "Root Dir Sectors    : " << bpb->RootDirSecs << endl;
+    cout << "First Root Sector   : " << bpb->FirstRootSec << endl;
+    cout << "First Data Sector   : " << bpb->FirstDatSec << endl;
+    cout << "Cluster Count       : " << bpb->ClusterCount << endl;
+  }
+
   void printBlocks(MemoryPool *mempool)
   {
     for (vector<MemoryPool *>::iterator itr = memoryPools.begin(); itr != memoryPools.end(); itr++)

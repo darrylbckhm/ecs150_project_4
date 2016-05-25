@@ -8,10 +8,12 @@
 #include <cstdlib>
 #include <memory.h>
 #include <fcntl.h>
-
+#include <string>
+#include <algorithm>
 #include "VirtualMachine.h"
 #include "Machine.h"
 #include "VMCustom.h"
+#include <sstream>
 
 
 #ifdef __cplusplus
@@ -19,6 +21,120 @@ extern "C" {
 #endif
 
   using namespace std;
+
+  string intToHex(int a)
+  {
+    stringstream stream;
+    stream << std::hex << a;
+    string hexStr(stream.str());
+
+    return hexStr;
+
+  }
+
+  void extractFatImage(FAT *fat)
+  {
+    TMachineSignalState sigstate;
+    MachineSuspendSignals(&sigstate);
+
+    // extract BPB
+
+    int fd = fat->fd;
+
+    // declare variables
+    uint8_t rawBPB[512];
+    int length = 512;
+    BPB *bpb = new BPB();
+   
+    // read in raw BPB 
+    curThread->fileCallFlag = 0;
+    MachineFileRead(fd, (char*)sharedmem + (curThread->threadID * MAX_LENGTH), length, fileCallback, curThread);
+    curThread->state = VM_THREAD_STATE_WAITING;
+
+    MachineResumeSignals(&sigstate);
+    Scheduler(false);
+    MachineSuspendSignals(&sigstate);
+    
+    memcpy(rawBPB, (char*)sharedmem + (curThread->threadID * MAX_LENGTH), length);
+
+    // grab bytes and store in BPB class
+    char name[10];
+    memcpy(name, rawBPB + 2, 9);
+    name[9] = '\0';
+
+    bpb->OEMName = string(name);
+    bpb->BytsPerSec =  *(uint16_t *)(rawBPB + 11);
+    bpb->SecPerClus = *(uint8_t *)(rawBPB + 13);
+    bpb->ReservedSecs = *(uint16_t *)(rawBPB + 14);
+    bpb->fatCount = *(uint8_t *)(rawBPB + 16);
+    bpb->RootEntry = *(uint16_t *)(rawBPB + 17);
+    bpb->TotSec16 = *(uint16_t *)(rawBPB + 19);
+    bpb->Media = *(uint8_t *)(rawBPB + 21);
+    bpb->FatSize16 = *(uint16_t *)(rawBPB + 22);
+    bpb->SecPerTrk = *(uint16_t *)(rawBPB + 24);
+    bpb->NumHeads = *(uint16_t *)(rawBPB + 26);
+    bpb->HiddSec = *(uint64_t *)(rawBPB + 28);
+    bpb->TotSec32 = *(uint64_t *)(rawBPB + 32);
+    bpb->DrvNumber = *(uint8_t *)(rawBPB + 36);
+    bpb->reserved1 = *(uint8_t *)(rawBPB + 37);
+    bpb->BootSig = *(uint8_t *)(rawBPB + 38);
+    bpb->RootDirSecs = ((bpb->RootEntry * 32) + (bpb->BytsPerSec - 1)) / bpb->BytsPerSec;
+    bpb->FirstRootSec = bpb->ReservedSecs + (bpb->fatCount * bpb->FatSize16);
+    bpb->FirstDataSec = bpb->ReservedSecs + (bpb->fatCount * bpb->FatSize16) + bpb->RootDirSecs;
+
+    int totSec = bpb->TotSec32;
+    if (bpb->TotSec16 != 0)
+      totSec = bpb->TotSec16;
+
+    int datasec = totSec - (bpb->ReservedSecs + (bpb->fatCount * bpb->FatSize16) + bpb->RootDirSecs);
+    bpb->ClusterCount = datasec / bpb->SecPerClus;
+
+    char label[12];
+    memcpy(label, rawBPB + 43, 11);
+    label[11] = '\0';
+    bpb->VolLab = string(label);
+
+    char type[9];
+    memcpy(type, rawBPB + 54, 8);
+    type[8] = '\0';
+    string s = "hello";
+    bpb->FileSystemType = string(type);
+
+    fat->bpb = bpb;
+
+    // extract FAT Sector
+    uint8_t data[512];
+    curThread->fileCallFlag = 0;
+
+    MachineFileSeek(fd, 512, 0, fileCallback, curThread);
+    curThread->state = VM_THREAD_STATE_WAITING;
+    Scheduler(false);
+    
+    curThread->fileCallFlag = 0;
+    MachineFileRead(fd, (char*)sharedmem + (curThread->threadID * MAX_LENGTH), length, fileCallback, curThread);
+    curThread->state = VM_THREAD_STATE_WAITING;
+
+    Scheduler(false);
+    
+    memcpy(data, (char*)sharedmem + (curThread->threadID * MAX_LENGTH), length);
+
+
+    for (int i = 1; i < 17; i++)
+    {
+      cout << "data: ";
+      for (int j = 0; j < 8; j++)
+      {
+        uint16_t a = *(uint16_t *)(data + ((2*i) - 2));
+        string s = intToHex(a);
+        cout << s << " ";
+        i++;
+      }
+      cout << endl;
+    }
+
+    MachineResumeSignals(&sigstate);
+
+  }
 
   void fileCallback(void *calldata, int result)
   {
