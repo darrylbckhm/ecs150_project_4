@@ -28,6 +28,8 @@ extern "C" {
     stream << std::hex << a;
     string hexStr(stream.str());
 
+    hexStr = string(4 - hexStr.length(), '0').append(hexStr);
+
     return hexStr;
 
   }
@@ -45,7 +47,7 @@ extern "C" {
     uint8_t rawBPB[512];
     int length = 512;
     BPB *bpb = new BPB();
-   
+
     // read in raw BPB 
     curThread->fileCallFlag = 0;
     MachineFileRead(fd, (char*)sharedmem + (curThread->threadID * MAX_LENGTH), length, fileCallback, curThread);
@@ -54,7 +56,7 @@ extern "C" {
     MachineResumeSignals(&sigstate);
     Scheduler(false);
     MachineSuspendSignals(&sigstate);
-    
+
     memcpy(rawBPB, (char*)sharedmem + (curThread->threadID * MAX_LENGTH), length);
 
     // grab bytes and store in BPB class
@@ -102,35 +104,76 @@ extern "C" {
 
     fat->bpb = bpb;
 
-    // extract FAT Sector
+
+    list<Cluster *> clusters;
+
+    for (int k = 1; k < bpb->FatSize16 + 1; k++)
+    {
+      // extract FAT Sector
+      uint8_t data[512];
+      curThread->fileCallFlag = 0;
+
+      MachineFileSeek(fd, 512*k, 0, fileCallback, curThread);
+      curThread->state = VM_THREAD_STATE_WAITING;
+      Scheduler(false);
+
+      curThread->fileCallFlag = 0;
+      MachineFileRead(fd, (char*)sharedmem + (curThread->threadID * MAX_LENGTH), length, fileCallback, curThread);
+      curThread->state = VM_THREAD_STATE_WAITING;
+
+      Scheduler(false);
+
+      memcpy(data, (char*)sharedmem + (curThread->threadID * MAX_LENGTH), length);
+
+      for (int i = 1; i < 513; i++)
+      {
+        uint16_t a = *(uint16_t *)(data + ((2*i) - 2));
+        string s = intToHex(a);
+
+        Cluster *c = new Cluster();
+        c->hex = string(s);
+
+        clusters.push_back(c);
+      }
+    }
+
+    cout << "size: " << clusters.size() << endl;
+
     uint8_t data[512];
     curThread->fileCallFlag = 0;
 
-    MachineFileSeek(fd, 512, 0, fileCallback, curThread);
+    MachineFileSeek(fd, 512 * bpb->FirstRootSec, 0, fileCallback, curThread);
     curThread->state = VM_THREAD_STATE_WAITING;
     Scheduler(false);
-    
+
     curThread->fileCallFlag = 0;
     MachineFileRead(fd, (char*)sharedmem + (curThread->threadID * MAX_LENGTH), length, fileCallback, curThread);
     curThread->state = VM_THREAD_STATE_WAITING;
 
     Scheduler(false);
-    
+
     memcpy(data, (char*)sharedmem + (curThread->threadID * MAX_LENGTH), length);
 
+    cout << "data: " << data << endl;
 
-    for (int i = 1; i < 17; i++)
-    {
+    char dirname[12];
+    memcpy(dirname, data + 0, 11);
+    dirname[11] = '\0';
+
+    cout << "dirname: " << dirname << endl;
+
+
+    /*for (auto itr = clusters.begin(); itr != clusters.end(); itr++)
+      {
       cout << "data: ";
       for (int j = 0; j < 8; j++)
       {
-        uint16_t a = *(uint16_t *)(data + ((2*i) - 2));
-        string s = intToHex(a);
-        cout << s << " ";
-        i++;
+      cout << (*itr)->hex << " ";
+      itr++;
       }
+      itr--;
       cout << endl;
-    }
+      }*/
 
     MachineResumeSignals(&sigstate);
 
@@ -288,7 +331,7 @@ extern "C" {
 
     while(*tmp > MAX_LENGTH)
     {
-    
+
       MachineFileRead(filedescriptor, (char*)sharedmem + (curThread->threadID * MAX_LENGTH), MAX_LENGTH, fileCallback, curThread);
       curThread->state = VM_THREAD_STATE_WAITING;
 

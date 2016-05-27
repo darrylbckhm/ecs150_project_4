@@ -25,6 +25,15 @@ extern "C" {
 
   using namespace std;
 
+  class Cluster
+  {
+    public:
+      int nextCluster;
+      string hex;
+      bool dirty;
+      vector<uint8_t> data;
+  };
+
   class BPB
   {
     public:
