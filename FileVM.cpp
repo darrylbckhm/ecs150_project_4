@@ -22,6 +22,10 @@ extern "C" {
 
   using namespace std;
 
+  BPB *bpb = new BPB();
+  vector<Cluster *> clusters;
+  FAT *fatImg;
+
   string intToHex(int a)
   {
     stringstream stream;
@@ -34,10 +38,127 @@ extern "C" {
 
   }
 
+
+  TVMStatus VMDirectoryOpen(const char *dirname, int *dirdescriptor)
+  {
+
+    TMachineSignalState sigstate;
+    MachineSuspendSignals(&sigstate);
+
+    for(int i = 0; i < bpb->RootEntry; i++)
+    {
+
+      SVMDirectoryEntry dirent;
+
+      *dirdescriptor = fatImg->fd;
+
+      VMDirectoryRead(*dirdescriptor, &dirent);
+    }
+
+    MachineResumeSignals(&sigstate);
+
+    return VM_STATUS_SUCCESS;
+
+  }
+
+  TVMStatus VMDirectoryClose(int dirdescriptor)
+  {
+
+    return VM_STATUS_SUCCESS;
+
+  }
+
+  TVMStatus VMDirectoryRead(int dirdescriptor, SVMDirectoryEntryRef dirent)
+  {
+
+    TMachineSignalState sigstate;
+    MachineSuspendSignals(&sigstate);
+
+    uint8_t data[512];
+    curThread->fileCallFlag = 0;
+
+    MachineFileSeek(fatImg->fd, 512 * bpb->FirstRootSec, 0, fileCallback, curThread);
+    curThread->state = VM_THREAD_STATE_WAITING;
+    Scheduler(false);
+
+    int size = (int)(bpb->RootDirSecs * (int)(bpb->BytsPerSec));
+    int length = MAX_LENGTH;
+
+    while(size > 0)
+    {
+
+      if(size < MAX_LENGTH)
+        length = size;
+
+      curThread->fileCallFlag = 0;
+      MachineFileRead(fatImg->fd, (char*)sharedmem + (curThread->threadID * MAX_LENGTH), length, fileCallback, curThread);
+      curThread->state = VM_THREAD_STATE_WAITING;
+
+      Scheduler(false);
+
+      memcpy(data, (char*)sharedmem + (curThread->threadID * MAX_LENGTH), 512);
+      size -= MAX_LENGTH;
+
+  }
+    char dirname[13];
+    memcpy(dirname, data + 0, 11);
+    dirname[11] = '\0';
+
+    char dcreate[2];
+    memcpy(dcreate, data + 16, 2);
+
+    cout << "dirname: " << dirname<< endl;
+
+    MachineResumeSignals(&sigstate);
+
+    return VM_STATUS_SUCCESS;
+
+  }
+
+  TVMStatus VMDirectoryRewind(int dirdescriptor)
+  {
+
+    return VM_STATUS_SUCCESS;
+
+
+  }
+
+  TVMStatus VMDirectoryCurrent(char *abspath)
+  {
+
+    return VM_STATUS_SUCCESS;
+
+
+  }
+
+  TVMStatus VMDirectoryChange(const char *path)
+  {
+
+    return VM_STATUS_SUCCESS;
+
+  }
+
+  TVMStatus VMDirectoryCreate(const char *dirname)
+  {
+
+    return VM_STATUS_SUCCESS;
+
+
+  }
+
+  TVMStatus VMDirectoryUnlink(const char *path)
+  {
+
+    return VM_STATUS_SUCCESS;
+
+  }
+
   void extractFatImage(FAT *fat)
   {
     TMachineSignalState sigstate;
     MachineSuspendSignals(&sigstate);
+
+    fatImg = fat;
 
     // extract BPB
 
@@ -46,7 +167,6 @@ extern "C" {
     // declare variables
     uint8_t rawBPB[512];
     int length = 512;
-    BPB *bpb = new BPB();
 
     // read in raw BPB 
     curThread->fileCallFlag = 0;
@@ -105,7 +225,6 @@ extern "C" {
     fat->bpb = bpb;
 
 
-    list<Cluster *> clusters;
 
     for (int k = 1; k < bpb->FatSize16 + 1; k++)
     {
@@ -137,11 +256,11 @@ extern "C" {
       }
     }
 
-    cout << "size: " << clusters.size() << endl;
+    //cout << "size: " << clusters.size() << endl;
 
     uint8_t data[512];
     curThread->fileCallFlag = 0;
-
+/*
     MachineFileSeek(fd, 512 * bpb->FirstRootSec, 0, fileCallback, curThread);
     curThread->state = VM_THREAD_STATE_WAITING;
     Scheduler(false);
@@ -161,7 +280,7 @@ extern "C" {
     dirname[11] = '\0';
 
     cout << "dirname: " << dirname << endl;
-
+*/
 
     /*for (auto itr = clusters.begin(); itr != clusters.end(); itr++)
       {
