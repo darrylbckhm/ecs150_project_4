@@ -42,7 +42,7 @@ extern "C" {
     cout << "File System Type    : " << bpb->FileSystemType << endl;
     cout << "Root Dir Sectors    : " << bpb->RootDirSecs << endl;
     cout << "First Root Sector   : " << bpb->FirstRootSec << endl;
-    cout << "First Data Sector   : " << bpb->FirstDatSec << endl;
+    cout << "First Data Sector   : " << bpb->FirstDataSec << endl;
     cout << "Cluster Count       : " << bpb->ClusterCount << endl;
   }
 

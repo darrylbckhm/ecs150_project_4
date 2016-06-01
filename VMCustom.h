@@ -25,6 +25,22 @@ extern "C" {
 
   using namespace std;
 
+  class Directory
+  {
+    public:
+      string lfn;
+      string sfn;
+      int attr;
+      int time;
+      int date;
+      int lastaccessdate;
+      int firstclushi;
+      int lastwritetime;
+      int lastwritedate;
+      int fstcluslo;
+      int filesize;
+  };
+
   class Cluster
   {
     public:
@@ -64,7 +80,7 @@ extern "C" {
 
   };
 
-    
+
   class FAT
   {
     public:
@@ -141,9 +157,10 @@ extern "C" {
   extern volatile unsigned int ticksElapsed;
 
   extern volatile unsigned int glbl_tickms;
- 
+
   // vector of all images
   extern vector<FAT *> images;
+  extern vector<Directory *> directories;
 
   // vector of all threads
   extern vector<TCB*> threads;

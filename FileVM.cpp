@@ -224,8 +224,6 @@ extern "C" {
 
     fat->bpb = bpb;
 
-
-
     for (int k = 1; k < bpb->FatSize16 + 1; k++)
     {
       // extract FAT Sector
@@ -260,7 +258,7 @@ extern "C" {
 
     uint8_t data[512];
     curThread->fileCallFlag = 0;
-/*
+    
     MachineFileSeek(fd, 512 * bpb->FirstRootSec, 0, fileCallback, curThread);
     curThread->state = VM_THREAD_STATE_WAITING;
     Scheduler(false);
@@ -273,14 +271,36 @@ extern "C" {
 
     memcpy(data, (char*)sharedmem + (curThread->threadID * MAX_LENGTH), length);
 
-    cout << "data: " << data << endl;
+    MachineSuspendSignals(&sigstate);
 
-    char dirname[12];
-    memcpy(dirname, data + 0, 11);
-    dirname[11] = '\0';
+    int offset = 0;
+    bool exit = false;
+    while (!exit)
+    {
+      if ((*(data + offset) - '0') == -16)
+      {
+        break;
+      }
 
-    cout << "dirname: " << dirname << endl;
-*/
+      if (*(data + offset + 11) == 0xF)
+      {
+        offset += 32;
+        continue;
+      }
+
+      Directory *dir = new Directory();
+
+      char sfn[12];
+      memcpy(sfn, data + offset, 11);
+      sfn[11] = '\0';
+
+      dir->sfn = string(sfn);
+
+      directories.push_back(dir);
+
+      offset += 32;
+
+    }
 
     /*for (auto itr = clusters.begin(); itr != clusters.end(); itr++)
       {

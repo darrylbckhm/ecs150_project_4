@@ -24,6 +24,7 @@ extern "C" {
   volatile unsigned int ticksElapsed;
   volatile unsigned int glbl_tickms;
   vector<FAT *> images;
+  vector<Directory *> directories;
   vector<TCB*> threads;
   vector<Mutex *> mutexes;
   queue<TCB*> highQueue;
