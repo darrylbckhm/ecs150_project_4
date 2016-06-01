@@ -104,7 +104,10 @@ extern "C" {
   TVMStatus VMDirectoryChange(const char *path)
   {
 
-    return VM_STATUS_SUCCESS;
+    if (string(path) == "/")
+      return VM_STATUS_SUCCESS;
+    else
+      return VM_STATUS_FAILURE;
 
   }
 
@@ -270,7 +273,7 @@ extern "C" {
 
       dir->sfn = string(sfn);
 
-      cout << "sfn: " << sfn << endl;
+      //cout << "sfn: " << sfn << endl;
 
       uint8_t attr = 0;
 
@@ -285,7 +288,7 @@ extern "C" {
 
       dir->filesize = filesize;
 
-      cout << "filesize: " << filesize << endl;
+      //cout << "filesize: " << filesize << endl;
 
       //time created
       uint16_t time = 0;
@@ -294,7 +297,7 @@ extern "C" {
 
       dir->time = time;
 
-      cout << "time: " << time << endl;
+      //cout << "time: " << time << endl;
 
       //date created
       uint16_t date = 0;
@@ -303,7 +306,7 @@ extern "C" {
 
       dir->date = date;
 
-      cout << "date: " << date << endl;
+      //cout << "date: " << date << endl;
 
       //lastwritetime
       uint16_t lastwritetime = 0;
@@ -312,14 +315,14 @@ extern "C" {
 
       dir->lastwritetime = lastwritetime;
 
-      cout << "lastwritetime: " << lastwritetime << endl;
+      //cout << "lastwritetime: " << lastwritetime << endl;
 
       //lastwritedate
       uint16_t lastwritedate = 0;
 
       memcpy(&lastwritedate, data + offset + 24, 2);
 
-      cout << "lastwritedate: " << lastwritedate << endl;
+      //cout << "lastwritedate: " << lastwritedate << endl;
 
       directories.push_back(dir);
 
@@ -422,6 +425,20 @@ extern "C" {
 
     MachineSuspendSignals(&sigstate);
 
+    if (mode == O_RDONLY)
+    {
+      int index = 0;
+      for (vector<Directory *>::iterator itr = directories.begin(); itr != directories.end(); itr++)
+      {
+        if ((*itr)->lfn == string(filename))
+        {
+          *filedescriptor = index;
+        }
+        index++;
+      }
+
+    }
+
     curThread->fileCallFlag = 0;
     if (filename == NULL || filedescriptor == NULL)
       return VM_STATUS_ERROR_INVALID_PARAMETER;
@@ -433,6 +450,8 @@ extern "C" {
     Scheduler(false);
 
     *filedescriptor = curThread->fileCallData; 
+
+    cout << "fd: " << *filedescriptor << endl;
 
     MachineResumeSignals(&sigstate);
 
@@ -446,6 +465,9 @@ extern "C" {
     TMachineSignalState sigstate;
 
     MachineSuspendSignals(&sigstate);
+
+    if (filedescriptor > 3)
+      return VM_STATUS_SUCCESS;
 
     curThread->fileCallFlag = 0;
     if (length == NULL || data == NULL)
@@ -495,6 +517,45 @@ extern "C" {
 
     if (length == NULL || data == NULL)
       return VM_STATUS_ERROR_INVALID_PARAMETER;
+
+    if (filedescriptor > 3)
+    {
+
+      uint8_t data[512];
+      curThread->fileCallFlag = 0;
+
+      FAT *image = images[0];
+      int fd = image->fd;
+
+
+      
+      MachineFileSeek(fd, 512*bpb->FirstDataSec + 1024*3, 0, fileCallback, curThread);
+      curThread->state = VM_THREAD_STATE_WAITING;
+      Scheduler(false);
+
+      
+      curThread->fileCallFlag = 0;
+      MachineFileRead(fd, (char*)sharedmem + (curThread->threadID * MAX_LENGTH), 512, fileCallback, curThread);
+      curThread->state = VM_THREAD_STATE_WAITING;
+
+      Scheduler(false);
+
+      memcpy(data, (char*)sharedmem + (curThread->threadID * MAX_LENGTH), 512);
+
+      cout << data << endl;
+
+      if (switcher == 0)
+      {
+        switcher = 1;
+        return VM_STATUS_SUCCESS;
+      }
+      else
+      {
+        switcher = 0;
+        return VM_STATUS_FAILURE;
+      }
+
+    }
 
 
     int *tmp = length;

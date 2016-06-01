@@ -33,6 +33,7 @@ extern "C" {
   queue<TCB*> lowQueue;
   TCB *curThread;
   TVMThreadID currentThreadID;
+  int switcher = 0;
 
   void Scheduler(bool activate)
   {
