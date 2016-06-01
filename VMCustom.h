@@ -161,6 +161,7 @@ extern "C" {
   // vector of all images
   extern vector<FAT *> images;
   extern vector<Directory *> directories;
+  extern int dirIndex;
 
   // vector of all threads
   extern vector<TCB*> threads;

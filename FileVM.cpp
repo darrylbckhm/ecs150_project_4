@@ -46,15 +46,7 @@ extern "C" {
     TMachineSignalState sigstate;
     MachineSuspendSignals(&sigstate);
 
-    for(int i = 0; i < bpb->RootEntry; i++)
-    {
-
-      SVMDirectoryEntry dirent;
-
-      *dirdescriptor = fatImg->fd;
-
-      VMDirectoryRead(*dirdescriptor, &dirent);
-    }
+    *dirdescriptor = 3;
 
     MachineResumeSignals(&sigstate);
 
@@ -75,55 +67,15 @@ extern "C" {
     TMachineSignalState sigstate;
     MachineSuspendSignals(&sigstate);
 
-    //char sfn[13] = dir->sfn;
-    for(vector<Directory *>::iterator itr = directories.begin(); itr != directories.end(); itr++)
-    {
+    if (dirIndex == directories.size())
+      return VM_STATUS_FAILURE;
 
-      memcpy(dirent->DShortFileName, (*itr)->sfn.c_str(), 13);
-      dirent->DSize = (*itr)->filesize;
+    memcpy(dirent->DShortFileName, directories[dirIndex]->sfn.c_str(), 13);
+    dirent->DSize = directories[dirIndex]->filesize;
 
-    }
 
-    //dirent->DCreate = dir->time;
-    //dirent->DAccess = ;
-    //dirent->DModify = dir->lastwritedate;
+    dirIndex++;
 
-/*
-    uint8_t data[512];
-    curThread->fileCallFlag = 0;
-
-    MachineFileSeek(fatImg->fd, 512 * bpb->FirstRootSec, 0, fileCallback, curThread);
-    curThread->state = VM_THREAD_STATE_WAITING;
-    Scheduler(false);
-
-    int size = (int)(bpb->RootDirSecs * (int)(bpb->BytsPerSec));
-    int length = MAX_LENGTH;
-
-    while(size > 0)
-    {
-
-      if(size < MAX_LENGTH)
-        length = size;
-
-      curThread->fileCallFlag = 0;
-      MachineFileRead(fatImg->fd, (char*)sharedmem + (curThread->threadID * MAX_LENGTH), length, fileCallback, curThread);
-      curThread->state = VM_THREAD_STATE_WAITING;
-
-      Scheduler(false);
-
-      memcpy(data, (char*)sharedmem + (curThread->threadID * MAX_LENGTH), 512);
-      size -= MAX_LENGTH;
-
-  }
-    char dirname[13];
-    memcpy(dirname, data + 0, 11);
-    dirname[11] = '\0';
-
-    char dcreate[2];
-    memcpy(dcreate, data + 16, 2);
-
-    cout << "dirname: " << dirname<< endl;
-*/
     MachineResumeSignals(&sigstate);
 
     return VM_STATUS_SUCCESS;
@@ -140,6 +92,8 @@ extern "C" {
 
   TVMStatus VMDirectoryCurrent(char *abspath)
   {
+
+    strcpy(abspath, "/");
 
 
     return VM_STATUS_SUCCESS;
