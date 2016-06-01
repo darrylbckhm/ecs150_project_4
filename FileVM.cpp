@@ -25,6 +25,7 @@ extern "C" {
   BPB *bpb = new BPB();
   vector<Cluster *> clusters;
   FAT *fatImg;
+  Directory *dir;
 
   string intToHex(int a)
   {
@@ -74,6 +75,20 @@ extern "C" {
     TMachineSignalState sigstate;
     MachineSuspendSignals(&sigstate);
 
+    //char sfn[13] = dir->sfn;
+    for(vector<Directory *>::iterator itr = directories.begin(); itr != directories.end(); itr++)
+    {
+
+      memcpy(dirent->DShortFileName, (*itr)->sfn.c_str(), 13);
+      dirent->DSize = (*itr)->filesize;
+
+    }
+
+    //dirent->DCreate = dir->time;
+    //dirent->DAccess = ;
+    //dirent->DModify = dir->lastwritedate;
+
+/*
     uint8_t data[512];
     curThread->fileCallFlag = 0;
 
@@ -108,7 +123,7 @@ extern "C" {
     memcpy(dcreate, data + 16, 2);
 
     cout << "dirname: " << dirname<< endl;
-
+*/
     MachineResumeSignals(&sigstate);
 
     return VM_STATUS_SUCCESS;
@@ -292,8 +307,9 @@ extern "C" {
         continue;
       }
 
-      Directory *dir = new Directory();
+      dir = new Directory();
 
+      //shortfile name
       char sfn[12];
       memcpy(sfn, data + offset, 11);
       sfn[11] = '\0';
@@ -301,6 +317,55 @@ extern "C" {
       dir->sfn = string(sfn);
 
       cout << "sfn: " << sfn << endl;
+
+      uint8_t attr = 0;
+
+      memcpy(&attr, data + offset + 11, 1);
+
+      dir->attr = attr;
+
+      //filesize
+      uint32_t filesize = 0;
+
+      memcpy(&filesize, data + offset + 28, 4);
+
+      dir->filesize = filesize;
+
+      cout << "filesize: " << filesize << endl;
+
+      //time created
+      uint16_t time = 0;
+
+      memcpy(&time, data + offset + 14, 2);
+
+      dir->time = time;
+
+      cout << "time: " << time << endl;
+
+      //date created
+      uint16_t date = 0;
+
+      memcpy(&date, data + offset + 16, 2);
+
+      dir->date = date;
+
+      cout << "date: " << date << endl;
+
+      //lastwritetime
+      uint16_t lastwritetime = 0;
+
+      memcpy(&lastwritetime, data + offset + 22, 2);
+
+      dir->lastwritetime = lastwritetime;
+
+      cout << "lastwritetime: " << lastwritetime << endl;
+
+      //lastwritedate
+      uint16_t lastwritedate = 0;
+
+      memcpy(&lastwritedate, data + offset + 24, 2);
+
+      cout << "lastwritedate: " << lastwritedate << endl;
 
       directories.push_back(dir);
 
