@@ -126,6 +126,7 @@ extern "C" {
   TVMStatus VMDirectoryCurrent(char *abspath)
   {
 
+
     return VM_STATUS_SUCCESS;
 
 
@@ -277,7 +278,10 @@ extern "C" {
     bool exit = false;
     while (!exit)
     {
-      if ((*(data + offset) - '0') == -16)
+      uint16_t c = *(uint16_t *)(data + offset + 32);
+      string s = intToHex(c);
+
+      if (s == "0000")
       {
         break;
       }
@@ -296,11 +300,19 @@ extern "C" {
 
       dir->sfn = string(sfn);
 
+      cout << "sfn: " << sfn << endl;
+
       directories.push_back(dir);
+
+      if (sfn[8] == 'C' && sfn[0] == 'V')
+      {
+        break;
+      }
 
       offset += 32;
 
     }
+
 
     /*for (auto itr = clusters.begin(); itr != clusters.end(); itr++)
       {

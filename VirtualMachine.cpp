@@ -250,6 +250,7 @@ extern "C" {
       // store image in global vector
       images.push_back(image);
 
+
       main_entry(argc, argv);
 
     }
